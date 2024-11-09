@@ -4,7 +4,6 @@ import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-
 from homeassistant.const import CONF_HOST
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
@@ -35,7 +34,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.CLIMATE, Platform.SWITCH]
+PLATFORMS = [Platform.CLIMATE, Platform.SWITCH, Platform.SENSOR]
 
 async def async_setup(hass: HomeAssistant, config: dict):
     hass.data.setdefault(DOMAIN, {})
@@ -62,8 +61,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
         hass.data[DOMAIN]['state_proxy'].set_variable(var_name, var_value)
 
     hass.services.async_register(DOMAIN, "set_variable", handle_set_variable)
-
-    await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
+##Split platform loading for potetial issues when adding .sensor on a old installation.
+    await hass.config_entries.async_forward_entry_setup(config_entry, Platform.CLIMATE)
+    await hass.config_entries.async_forward_entry_setup(config_entry, Platform.SWITCH)
+    await hass.config_entries.async_forward_entry_setup(config_entry, Platform.SENSOR)
 
     async_track_time_interval(hass, state_proxy.async_update, SCAN_INTERVAL)
 
@@ -79,7 +80,10 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
 async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     _LOGGER.debug("Unloading setup entry: %s, data: %s, options: %s", config_entry.entry_id, config_entry.data, config_entry.options)
-    unload_ok = await hass.config_entries.async_unload_platforms(config_entry, [Platform.SWITCH, Platform.CLIMATE])
+    unload_ok = await hass.config_entries.async_unload_platforms(
+        config_entry, [Platform.SWITCH, Platform.CLIMATE, Platform.SENSOR]
+        )
+    _LOGGER.debug(f"Unload status for Uponor platforms: {unload_ok}")  
     return unload_ok
 
 class UponorStateProxy:
@@ -143,11 +147,27 @@ class UponorStateProxy:
         var = thermostat + '_maximum_setpoint'
         if var in self._data:
             return round((int(self._data[var]) - 320) / 18, 1)
-
+        
+    def has_humidity_sensor(self, thermostat):
+        var = thermostat + '_rh'
+        return var in self._data and int(self._data[var]) != 0
+    
     def get_humidity(self, thermostat):
         var = thermostat + '_rh'
         if var in self._data and int(self._data[var]) >= TOO_LOW_HUMIDITY_LIMIT:
             return int(self._data[var])
+
+    def has_floor_temperature(self, thermostat):
+        var = thermostat + '_external_temperature'
+        return var in self._data and int(self._data[var]) != 32767
+
+    def get_floor_temperature(self, thermostat):
+        var = thermostat + '_external_temperature'
+        if var in self._data:
+            temp = int(self._data[var])
+            if temp != 32767 and temp <= TOO_HIGH_TEMP_LIMIT:
+                return round((temp - 320) / 18, 1)
+        return None
 
     # Temperature setpoint
 
