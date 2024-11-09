@@ -59,6 +59,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     def handle_set_variable(call):
         var_name = call.data.get('var_name')
         var_value = call.data.get('var_value')
+        _LOGGER.debug(f"Setting variable: {var_name} to: {var_value}")
         hass.data[DOMAIN]['state_proxy'].set_variable(var_name, var_value)
 
     hass.services.async_register(DOMAIN, "set_variable", handle_set_variable)
@@ -311,8 +312,11 @@ class UponorStateProxy:
     # Rest
     async def async_update(self,_=None):
         try:
+            _LOGGER.debug("Running  async_update to get data from Uponor thermostat.")
             self.next_sp_from_dt = dt_util.now()
             self._data = await self._hass.async_add_executor_job(lambda: self._client.get_data())
+            # For deep debug remove comment and you get the full json message.
+            # _LOGGER.debug(f"Data recieved from Uponor: {self._data}")
             self._hass.async_add_job(async_dispatcher_send, self._hass, SIGNAL_UPONOR_STATE_UPDATE)
         except Exception as ex:
             _LOGGER.error("Uponor thermostat was unable to update: %s", ex)

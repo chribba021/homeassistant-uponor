@@ -1,9 +1,7 @@
 import logging
 
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.const import UnitOfTemperature, PERCENTAGE
-from homeassistant.const import UnitOfTemperature
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
@@ -38,6 +36,7 @@ class UponorFloorTemperatureSensor(SensorEntity):
         self._attr_name = f"{state_proxy.get_room_name(thermostat)} Floor Temperature"
         self._attr_unique_id = f"{state_proxy.get_thermostat_id(thermostat)}_floor_temp"
         self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+        self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
     def device_info(self):
@@ -62,6 +61,7 @@ class UponorFloorTemperatureSensor(SensorEntity):
     @callback
     def _update_callback(self):
         """Uppdatera sensorns tillstånd när data ändras."""
+        _LOGGER.debug(f"Updating state for {self._attr_name} with ID {self._attr_unique_id}")
         self.async_write_ha_state()        
 class UponorRoomCurrentTemperatureSensor(SensorEntity):
 
@@ -71,6 +71,8 @@ class UponorRoomCurrentTemperatureSensor(SensorEntity):
         self._attr_name = f"{state_proxy.get_room_name(thermostat)} Current Temperature"
         self._attr_unique_id = f"{state_proxy.get_thermostat_id(thermostat)}_current_temp"
         self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        
 
     @property
     def device_info(self):
@@ -95,7 +97,9 @@ class UponorRoomCurrentTemperatureSensor(SensorEntity):
     @callback
     def _update_callback(self):
         """Uppdatera sensorns tillstånd när data ändras."""
+        _LOGGER.debug(f"Updating state for {self._attr_name} with ID {self._attr_unique_id}")
         self.async_write_ha_state()
+
 class UponorHumiditySensor(SensorEntity):
     def __init__(self, state_proxy, thermostat):
         self._state_proxy = state_proxy
@@ -104,6 +108,7 @@ class UponorHumiditySensor(SensorEntity):
         self._attr_unique_id = f"{state_proxy.get_thermostat_id(thermostat)}_rh"
         self._attr_device_class = SensorDeviceClass.HUMIDITY
         self._attr_native_unit_of_measurement = PERCENTAGE
+        self._attr_state_class = SensorStateClass.MEASUREMENT 
 
     @property
     def device_info(self):
@@ -133,4 +138,5 @@ class UponorHumiditySensor(SensorEntity):
 
     @callback
     def _update_callback(self):
+        _LOGGER.debug(f"Updating state for {self._attr_name} with ID {self._attr_unique_id}")
         self.async_write_ha_state()
