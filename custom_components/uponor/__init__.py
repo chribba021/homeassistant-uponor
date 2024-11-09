@@ -4,6 +4,7 @@ import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
+
 from homeassistant.const import CONF_HOST
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
@@ -61,10 +62,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
         hass.data[DOMAIN]['state_proxy'].set_variable(var_name, var_value)
 
     hass.services.async_register(DOMAIN, "set_variable", handle_set_variable)
-##Split platform loading for potetial issues when adding .sensor on a old installation.
-    await hass.config_entries.async_forward_entry_setup(config_entry, Platform.CLIMATE)
-    await hass.config_entries.async_forward_entry_setup(config_entry, Platform.SWITCH)
-    await hass.config_entries.async_forward_entry_setup(config_entry, Platform.SENSOR)
+
+    await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
 
     async_track_time_interval(hass, state_proxy.async_update, SCAN_INTERVAL)
 
@@ -80,9 +79,7 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
 async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     _LOGGER.debug("Unloading setup entry: %s, data: %s, options: %s", config_entry.entry_id, config_entry.data, config_entry.options)
-    unload_ok = await hass.config_entries.async_unload_platforms(
-        config_entry, [Platform.SWITCH, Platform.CLIMATE, Platform.SENSOR]
-        )
+    unload_ok = await hass.config_entries.async_unload_platforms(config_entry, [Platform.SWITCH, Platform.CLIMATE, Platform.SENSOR])
     _LOGGER.debug(f"Unload status for Uponor platforms: {unload_ok}")  
     return unload_ok
 
