@@ -62,7 +62,8 @@ class UponorFloorTemperatureSensor(SensorEntity):
     def _update_callback(self):
         """Uppdatera sensorns tillstånd när data ändras."""
         _LOGGER.debug(f"Updating state for {self._attr_name} with ID {self._attr_unique_id}")
-        self.async_write_ha_state()        
+        self.async_write_ha_state()      
+          
 class UponorRoomCurrentTemperatureSensor(SensorEntity):
 
     def __init__(self, state_proxy, thermostat):
