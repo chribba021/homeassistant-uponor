@@ -14,18 +14,18 @@ async def async_setup_entry(hass, entry, async_add_entities):
     entities = []
     for thermostat in hass.data[DOMAIN]["thermostats"]:
         room_name = state_proxy.get_room_name(thermostat)
-        _LOGGER.debug(f"Lägger till sensorer för {room_name} (thermostat ID: {thermostat})")
+        _LOGGER.debug(f"Adding sensors for {room_name} (thermostat ID: {thermostat})")
         entities.append(UponorRoomCurrentTemperatureSensor(state_proxy, thermostat))
         
         if state_proxy.has_floor_temperature(thermostat):
             entities.append(UponorFloorTemperatureSensor(state_proxy, thermostat))
-            _LOGGER.debug(f"Lade till golvsensor för {room_name}")
+            _LOGGER.debug(f"Added floor sensor for: {room_name}")
         
         if state_proxy.has_humidity_sensor(thermostat):
             entities.append(UponorHumiditySensor(state_proxy, thermostat))
-            _LOGGER.debug(f"Lade till luftfuktighetssensor för {room_name}")
+            _LOGGER.debug(f"Added humidity sensor for: {room_name}")
     
-    _LOGGER.debug(f"Totalt antal sensorer som läggs till: {len(entities)}")
+    _LOGGER.debug(f"Total number of sensors added: {len(entities)}")
     async_add_entities(entities, update_before_add=False)
 
 class UponorFloorTemperatureSensor(SensorEntity):
@@ -60,10 +60,10 @@ class UponorFloorTemperatureSensor(SensorEntity):
         )
     @callback
     def _update_callback(self):
-        """Uppdatera sensorns tillstånd när data ändras."""
+        """Update sensor state. when data updates"""
         _LOGGER.debug(f"Updating state for {self._attr_name} with ID {self._attr_unique_id}")
         self.async_write_ha_state()      
-          
+
 class UponorRoomCurrentTemperatureSensor(SensorEntity):
 
     def __init__(self, state_proxy, thermostat):
@@ -97,7 +97,7 @@ class UponorRoomCurrentTemperatureSensor(SensorEntity):
         )
     @callback
     def _update_callback(self):
-        """Uppdatera sensorns tillstånd när data ändras."""
+        """Update sensor state. when data updates"""
         _LOGGER.debug(f"Updating state for {self._attr_name} with ID {self._attr_unique_id}")
         self.async_write_ha_state()
 
